@@ -1,8 +1,8 @@
 /*
   Project: LDR + DHT22 Sensor with OLED Display
-  Name: M.HAMZA FAISAL
-  Reg No: 23-NTU-CS-1066
-  Date: 21-Oct-2025
+  Name: Saad Faisal
+  Reg No: 23-NTU-CS-1281
+  Date: 23-Oct-2025
 */
 
 #include <Arduino.h>
