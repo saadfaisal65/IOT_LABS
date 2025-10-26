@@ -46,9 +46,9 @@ Each button toggles devices and the OLED screen updates live to display the curr
 🔗 [View on Wokwi](https://wokwi.com/projects/445847070420105217)
 
 ### 📸 Screenshots
-![OLED Output](LED_Mode_Controller_with_OLED_and_Buzzer/Screenshots/Task1_output.jpg)  
-![Simulation Setup](LED_Mode_Controller_with_OLED_and_Buzzer/Screenshots/Task1_wokwi.png)  
-![Hardware Circuit](LED_Mode_Controller_with_OLED_and_Buzzer/Screenshots/Task1_hardware.jpg)
+![OLED Output](LED_Mode_Controller_with_OLED_and_Buzzer/Screenshot/Task1_output.jpg)  
+![Simulation Setup](LED_Mode_Controller_with_OLED_and_Buzzer/Screenshot/Task1_wokwi.png)  
+![Hardware Circuit](LED_Mode_Controller_with_OLED_and_Buzzer/Screenshot/Task1_hardware.jpg)
 
 ---
 
