@@ -1,5 +1,5 @@
 /*
-  Project: Button Press Detection (Short / Long Press)
+  Project: Button Press Detection (Short / Long Press) - PWM Version
   Name: Saad Faisal
   Reg No: 23-NTU-CS-1281
   Date: 26-Oct-2025
@@ -11,59 +11,81 @@
 #include <Adafruit_SSD1306.h>
 
 // --- Pin Definitions ---
-#define BTN 25       // Button pin
-#define LED 5        // LED pin
-#define BUZZER 18   // Buzzer pin
+#define BTN       25   // Button pin
+#define LED       5    // LED pin
+#define BUZZER    18   // Buzzer pin
 
-// --- OLED Display Setup (I2C) ---
+// --- PWM Channels and Settings ---
+#define PWM_LED       0
+#define PWM_BUZZER    1
+#define LED_FREQ      5000     // 5 kHz for LED
+#define BUZZER_FREQ   2000     // start freq for buzzer
+#define RESOLUTION    8        // 8-bit PWM (0–255)
+
+// --- OLED Setup ---
 Adafruit_SSD1306 display(128, 64, &Wire, -1);
 
 // --- Variables ---
-bool ledState = false;           // to store LED ON/OFF state
-unsigned long pressTime = 0;     // to store the time when button is pressed
-bool pressed = false;            // flag to check button press status
+bool ledState = false;
+unsigned long pressTime = 0;
+bool pressed = false;
 
-// --- Function to show text on OLED ---
-void showText(String msg) {
-  display.clearDisplay();         // clear old text
+// --- OLED Helper Function ---
+void showText(const String &msg) {
+  display.clearDisplay();
   display.setTextSize(1);
   display.setTextColor(WHITE);
-  display.setCursor(0, 20);       // position for message
-  display.println(msg);           // print message
-  display.display();              // update OLED screen
+  display.setCursor(0, 25);
+  display.println(msg);
+  display.display();
 }
 
+// --- PWM Buzzer Function ---
+void beepBuzzer(int freq, int duration) {
+  ledcWriteTone(PWM_BUZZER, freq); // play tone
+  delay(duration);
+  ledcWrite(PWM_BUZZER, 0);        // stop tone
+}
+
+// --- Setup Function ---
 void setup() {
-  pinMode(BTN, INPUT_PULLUP);     // button as input with internal pull-up
-  pinMode(LED, OUTPUT);           // LED as output
-  pinMode(BUZZER, OUTPUT);        // buzzer as output
+  pinMode(BTN, INPUT_PULLUP);
 
-  // --- Initialize the OLED Display ---
+  // --- OLED Initialization ---
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
-  showText("Ready...");           // startup message
+  display.clearDisplay();
+  showText("Ready...");
+
+  // --- PWM Setup ---
+  ledcSetup(PWM_LED, LED_FREQ, RESOLUTION);
+  ledcAttachPin(LED, PWM_LED);
+
+  ledcSetup(PWM_BUZZER, BUZZER_FREQ, RESOLUTION);
+  ledcAttachPin(BUZZER, PWM_BUZZER);
 }
 
+// --- Main Loop ---
 void loop() {
-  // --- Check if button is pressed down ---
+  // --- Button Pressed ---
   if (digitalRead(BTN) == LOW && !pressed) {
-    pressed = true;               // mark button as pressed
-    pressTime = millis();         // save press start time
+    pressed = true;
+    pressTime = millis();
   }
 
-  // --- Check if button is released ---
+  // --- Button Released ---
   if (digitalRead(BTN) == HIGH && pressed) {
-    unsigned long duration = millis() - pressTime;   // calculate how long it was held
-    pressed = false;              // reset press flag
+    pressed = false;
+    unsigned long duration = millis() - pressTime;
 
-    // --- Long Press Detection (>1.5s) ---
+    // --- Long Press (>1.5s) ---
     if (duration > 1500) {
-      tone(BUZZER, 1000, 500);    // play buzzer tone
       showText("Long Press → Buzzer");
-    } 
-    // --- Short Press Detection ---
+      beepBuzzer(1000, 400); // long beep
+    }
+    // --- Short Press ---
     else {
-      ledState = !ledState;       // toggle LED state
-      digitalWrite(LED, ledState);
+      ledState = !ledState;                // toggle LED
+      ledcWrite(PWM_LED, ledState ? 255 : 0); // ON/OFF brightness
       showText("Short Press → LED Toggle");
     }
   }
