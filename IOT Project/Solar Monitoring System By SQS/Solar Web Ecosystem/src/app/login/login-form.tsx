@@ -1,0 +1,133 @@
+"use client";
+
+import * as React from "react";
+import { useRouter } from "next/navigation";
+
+import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { Button } from "@/components/ui/button";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { ThemeToggle } from "@/components/theme-toggle";
+import { CreditFooter } from "@/components/credit-footer";
+
+export default function LoginForm({ nextPath }: { nextPath: string }) {
+	const router = useRouter();
+
+	React.useEffect(() => {
+		// Supabase password-recovery flows can sometimes land on the Site URL
+		// (often /login) with recovery tokens or errors in the URL hash.
+		// If that happens, forward the user to the reset-password screen.
+		if (typeof window === "undefined") return;
+		const { hash, search } = window.location;
+		if (!hash) return;
+		const hashParams = new URLSearchParams(hash.startsWith("#") ? hash.slice(1) : hash);
+		const type = hashParams.get("type");
+		const isRecovery =
+			type === "recovery" || hashParams.has("access_token") || hashParams.has("refresh_token");
+		const isRecoveryError =
+			hashParams.get("error_code") === "otp_expired" ||
+			hashParams.get("error") === "access_denied" ||
+			hashParams.get("error") === "invalid_request";
+		if (isRecovery || isRecoveryError) {
+			window.location.replace(`/reset-password${search}${hash}`);
+		}
+	}, []);
+
+	const [email, setEmail] = React.useState("");
+	const [password, setPassword] = React.useState("");
+	const [loading, setLoading] = React.useState(false);
+	const [error, setError] = React.useState<string | null>(null);
+
+	async function onSubmit(e: React.FormEvent) {
+		e.preventDefault();
+		setError(null);
+		setLoading(true);
+		try {
+			const supabase = createSupabaseBrowserClient();
+			const { error: signInError } = await supabase.auth.signInWithPassword({
+				email,
+				password,
+			});
+			if (signInError) throw signInError;
+			router.replace(nextPath);
+			router.refresh();
+		} catch (err: any) {
+			setError(err?.message ?? "Login failed");
+		} finally {
+			setLoading(false);
+		}
+	}
+
+	return (
+		<div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/30 flex flex-col p-4">
+			<div className="flex-1 flex items-center justify-center">
+				<div className="w-full max-w-md animate-in fade-in-0 slide-in-from-bottom-3 duration-500 motion-reduce:animate-none">
+					<div className="flex justify-end pb-3">
+						<ThemeToggle />
+					</div>
+					<Card>
+						<CardHeader>
+							<CardTitle>SolarSQS</CardTitle>
+							<CardDescription>Sign in to your solar monitoring dashboard</CardDescription>
+						</CardHeader>
+						<CardContent>
+							<form onSubmit={onSubmit} className="space-y-4">
+							<div className="space-y-2">
+								<Label htmlFor="email">Email address</Label>
+								<Input
+									id="email"
+									type="text"
+									autoComplete="email"
+									value={email}
+									onChange={(e) => setEmail(e.target.value)}
+									required
+								/>
+							</div>
+							<div className="space-y-2">
+								<Label htmlFor="password">Password</Label>
+								<Input
+									id="password"
+									type="password"
+									autoComplete="current-password"
+									value={password}
+									onChange={(e) => setPassword(e.target.value)}
+									required
+								/>
+							</div>
+							<div className="flex items-center justify-end">
+								<a
+									className="text-sm text-muted-foreground underline underline-offset-4 transition-colors hover:text-foreground"
+									href="/forgot-password"
+								>
+									Forgot password?
+								</a>
+							</div>
+							{error ? <p className="text-sm text-red-600">{error}</p> : null}
+							<Button type="submit" className="w-full" disabled={loading}>
+								{loading ? "Signing in..." : "Sign in"}
+							</Button>
+							<div className="text-sm text-muted-foreground">
+								Don’t have an account?{" "}
+								<a
+									className="underline underline-offset-4 transition-colors hover:text-foreground"
+									href="/signup"
+								>
+									Create one
+								</a>
+							</div>
+						</form>
+						</CardContent>
+					</Card>
+				</div>
+			</div>
+			<CreditFooter className="pb-2" />
+		</div>
+	);
+}
